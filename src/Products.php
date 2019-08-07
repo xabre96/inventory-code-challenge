@@ -7,49 +7,65 @@ require 'ProductsSoldInterface.php';
 
 class Products implements OrderProcessorInterface, InventoryInterface, ProductsPurchasedInterface, ProductsSoldInterface
 {
-    public const BROWNIE = 1;
-    public const LAMINGTON = 2;
-    public const BLUEBERRY_MUFFIN = 3;
-    public const CROISSANT = 4;
-    public const CHOCOLATE_CAKE = 5;
-    public $orders = [];
+  public const BROWNIE = 1;
+  public const LAMINGTON = 2;
+  public const BLUEBERRY_MUFFIN = 3;
+  public const CROISSANT = 4;
+  public const CHOCOLATE_CAKE = 5;
+  public $productOrders = [];
 
-    public function __construct()
-    {
-        $this->processFromJson('../orders-sample.json');
-        print_r($this->orders);
-        print_r($this->getSoldTotal(1));
+  public function __construct()
+  {
+    $this->processFromJson('../orders-sample.json');
+  }
+
+  public function setProductOrders(array $productOrders): void
+  {
+    $this->productOrders = $productOrders;
+  }
+
+  public function getProductOrders(): array
+  {
+    return $this->productOrders;
+  }
+
+  public function processFromJson(string $filePath): void
+  {
+    $productOrders = json_decode(file_get_contents($filePath));
+    $this->setProductOrders($productOrders);
+  }
+
+  public function getStockLevel(int $productId): int
+  {
+    return 0;
+  }
+
+  public function getPurchasedReceivedTotal(int $productId): int
+  {
+    return 0;
+  }
+
+  public function getPurchasedPendingTotal(int $productId): int
+  {
+    return 0;
+  }
+
+  public function getSoldTotal(int $productId): int
+  {
+    $soldTotal = [];
+    $productOrders = $this->getProductOrders();
+
+    foreach ($productOrders as $day) {
+      foreach ($day as $orders) {
+        foreach ($orders as $productKey => $productOrder) {
+          if ((int)$productKey === $productId) {
+            array_push($soldTotal, $productOrder);
+          }
+        }
+      }
     }
 
-    public function processFromJson(string $filePath): void
-    {
-        $this->orders = json_decode(file_get_contents($filePath));
-    }
-
-    public function getStockLevel(int $productId): int
-    {
-        return 0;
-    }
-
-    public function getPurchasedReceivedTotal(int $productId): int
-    {
-        return 0;
-    }
-
-    public function getPurchasedPendingTotal(int $productId): int
-    {
-        return 0;
-    }
-
-    public function getSoldTotal(int $productId): int
-    {
-        $w = array_map(function ($order) use ($productId) {
-            return array_filter($order, function ($o) use ($productId) {
-                echo $o;
-                return $o == $productId;
-            }, ARRAY_FILTER_USE_KEY);
-        }, $this->orders);
-        var_dump($w);
-        return 0;
-    }
+    return array_sum($soldTotal);
+  }
 }
+
